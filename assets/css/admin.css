@@ -1,0 +1,105 @@
+.kissmtp-wrap {
+    max-width: 800px;
+}
+
+.kissmtp-wrap .notice {
+    margin: 20px 0;
+    padding: 12px 20px;
+}
+
+.kissmtp-wrap .notice p {
+    margin: 0;
+}
+
+.kissmtp-wrap h2 {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #ddd;
+}
+
+.kissmtp-wrap .description {
+    font-style: italic;
+    color: #666;
+    margin-top: 4px;
+    margin-bottom: 12px;
+}
+
+.kissmtp-wrap .kissmtp-password-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.kissmtp-wrap .kissmtp-password-wrapper .regular-text {
+    flex: 1;
+}
+
+.kissmtp-wrap .kissmtp-toggle-password {
+    height: 36px;
+    padding: 0 12px;
+    white-space: nowrap;
+}
+
+.kissmtp-wrap .kissmtp-toggle-password .dashicons {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+}
+
+.kissmtp-test-form {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+}
+
+.kissmtp-test-form label {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.kissmtp-test-form input[type="email"] {
+    min-width: 300px;
+}
+
+.kissmtp-test-form .spinner {
+    float: none;
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 8px;
+}
+
+.kissmtp-test-result {
+    margin-top: 16px;
+    padding: 12px 16px;
+    border-radius: 4px;
+    display: none;
+}
+
+.kissmtp-test-result.success {
+    display: block;
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+}
+
+.kissmtp-test-result.error {
+    display: block;
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+}
+
+table.form-table th {
+    width: 200px;
+}
+
+table.form-table td {
+    padding-top: 16px;
+    padding-bottom: 16px;
+}
+
+table.form-table .description {
+    margin-top: 6px;
+}
