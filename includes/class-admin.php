@@ -71,7 +71,8 @@ class KISSMTP_Admin {
         $sanitized['encryption']  = in_array($input['encryption'] ?? 'tls', ['none', 'ssl', 'tls'], true) ? $input['encryption'] : 'tls';
         $sanitized['auth']        = !empty($input['auth']);
         $sanitized['username']    = sanitize_email($input['username'] ?? '');
-        $sanitized['password']    = !empty($input['password']) ? $this->kissmtp->encrypt_password($input['password']) : (get_option('kissmtp_options')['password'] ?? '');
+        $options = get_option('kissmtp_options');
+        $sanitized['password'] = !empty($input['password']) ? $this->kissmtp->encrypt_password($input['password']) : ($options ? $options['password'] : '');
         $sanitized['from_email']  = sanitize_email($input['from_email'] ?? '');
         $sanitized['from_name']   = sanitize_text_field($input['from_name'] ?? '');
         $sanitized['return_path'] = !empty($input['return_path']);

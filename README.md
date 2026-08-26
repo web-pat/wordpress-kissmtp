@@ -1,6 +1,9 @@
 # KISSMTP - Simple SMTP for WordPress
 
-A lightweight WordPress plugin that forces all outbound emails through SMTP for reliable email delivery.
+A lightweight WordPress plugin that forces all outbound emails through SMTP for reliable email delivery. There is a bunch of plugins like this for the same purpose. Why do another one?
+This plugin is *k*eep *i*t *s*imple *s*tupid. This plugin intends to do only what it says it does and there are not further upsells or nagging screens.
+
+**Not yet tested nor ready for productive use!**
 
 ## Features
 
