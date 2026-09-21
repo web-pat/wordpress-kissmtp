@@ -1,76 +1,41 @@
-(function($) {
+(function ($) {
     'use strict';
 
-    var $passwordField = $('#kissmtp_password');
-    var $toggleButton = $('.kissmtp-toggle-password');
-    var $testRecipient = $('#kissmtp_test_recipient');
-    var $sendTestBtn = $('#kissmtp_send_test');
-    var $testResult = $('#kissmtp_test_result');
+    var $recipient = $('#kissmtp_test_recipient');
+    var $button = $('#kissmtp_send_test');
     var $spinner = $('.kissmtp-test-form .spinner');
-    var originalButtonText = $sendTestBtn.text();
+    var $result = $('#kissmtp_test_result');
+    var buttonText = $button.text();
 
-    $toggleButton.on('click', function() {
-        var type = $passwordField.attr('type') === 'password' ? 'text' : 'password';
-        $passwordField.attr('type', type);
-        $toggleButton.find('.dashicons').toggleClass('dashicons-hidden dashicons-visibility');
-    });
-
-    $testRecipient.on('input', function() {
-        $sendTestBtn.prop('disabled', !isEmail($(this).val()));
-    });
-
-    $sendTestBtn.on('click', function() {
-        var recipient = $testRecipient.val().trim();
-
-        if (!isEmail(recipient)) {
-            showResult('error', kissmtp_ajax.error_valid);
+    $button.on('click', function () {
+        var email = $recipient.val().trim();
+        if (!email) {
+            showResult('error', 'Please enter a recipient email address.');
             return;
         }
 
         setLoading(true);
-        $testResult.hide().removeClass('success error');
-
-        $.post(kissmtp_ajax.ajax_url, {
+        $.post(kissmtpAdmin.ajaxUrl, {
             action: 'kissmtp_test_email',
-            nonce: kissmtp_ajax.nonce,
-            recipient: recipient
-        })
-        .done(function(response) {
-            if (response.success) {
-                showResult('success', response.data.message);
-            } else {
-                showResult('error', response.data.message || kissmtp_ajax.error_send);
-            }
-        })
-        .fail(function() {
-            showResult('error', kissmtp_ajax.error_send);
-        })
-        .always(function() {
+            nonce: kissmtpAdmin.nonce,
+            recipient: email
+        }).done(function (response) {
+            showResult(response.success ? 'success' : 'error', response.data.message || kissmtpAdmin.error);
+        }).fail(function (xhr) {
+            var message = xhr.responseJSON && xhr.responseJSON.data ? xhr.responseJSON.data.message : kissmtpAdmin.error;
+            showResult('error', message);
+        }).always(function () {
             setLoading(false);
         });
     });
 
-    function isEmail(email) {
-        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    }
-
     function setLoading(loading) {
-        $sendTestBtn.prop('disabled', loading);
-        $testRecipient.prop('disabled', loading);
-        if (loading) {
-            $sendTestBtn.text(kissmtp_ajax.sending);
-            $spinner.addClass('is-active');
-        } else {
-            $sendTestBtn.text(originalButtonText);
-            $spinner.removeClass('is-active');
-        }
+        $button.prop('disabled', loading).text(loading ? kissmtpAdmin.sending : buttonText);
+        $recipient.prop('disabled', loading);
+        $spinner.toggleClass('is-active', loading);
     }
 
     function showResult(type, message) {
-        $testResult
-            .removeClass('success error')
-            .addClass(type)
-            .text(message)
-            .slideDown();
+        $result.removeClass('success error').addClass(type).text(message).show();
     }
 })(jQuery);

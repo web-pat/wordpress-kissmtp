@@ -1,142 +1,49 @@
-# KISSMTP - Simple SMTP for WordPress
+# KISSMTP
 
-A lightweight WordPress plugin that forces all outbound emails through SMTP for reliable email delivery. There is a bunch of plugins like this for the same purpose. Why do another one?
-KISS stands for **k**eep **i**t **s**imple **s**tupid. This plugin intends to do only what it says it does and there are *no further upsells or nagging screens*.
-
-**Not yet tested nor ready for productive use!**
-
-## Features
-
-- **SMTP Configuration**: Configure any SMTP server (Gmail, Outlook, SendGrid, Mailgun, etc.)
-- **Encryption Support**: SSL, TLS, or no encryption
-- **Authentication**: Username/password authentication with encrypted credential storage
-- **From Address Override**: Force custom sender email and name on all outgoing mail
-- **Return Path**: Set return path header for better deliverability
-- **Test Email**: Built-in test email functionality to verify configuration
-- **Debug Logging**: SMTP debug output when WP_DEBUG and WP_DEBUG_LOG are enabled
-- **Password Security**: AES-256-CBC encryption for stored SMTP credentials
+KISSMTP configures WordPress' bundled PHPMailer instance to send mail through an SMTP server. It is deliberately limited to SMTP transport configuration, sender overrides, and an administrator-only test email.
 
 ## Requirements
 
-- WordPress 5.5 or higher
-- PHP 7.4 or higher
-- OpenSSL extension (for password encryption)
+- WordPress 6.0 or later
+- PHP 7.4 or later
+- OpenSSL with `aes-256-gcm` when an SMTP password is stored in the WordPress database
 
-## Installation
-
-### Method 1: Upload via WordPress Admin
-
-1. Download or clone this repository
-2. Zip the `wordpress-kissmtp` folder
-3. Go to **Plugins → Add New → Upload Plugin**
-4. Choose the zip file and click **Install Now**
-5. Click **Activate Plugin**
-
-### Method 2: Manual Installation
-
-1. Download or clone this repository
-2. Copy the `wordpress-kissmtp` folder to `/wp-content/plugins/`
-3. Go to **Plugins** in WordPress admin
-4. Find **KISSMTP** and click **Activate**
-
-### Method 3: WP-CLI
-
-```bash
-wp plugin install /path/to/wordpress-kissmtp --activate
-```
-
-## Configuration
-
-1. Navigate to **Settings → KISSMTP** in your WordPress admin
-2. Configure the SMTP settings:
-
-| Field | Description | Example |
-|-------|-------------|---------|
-| SMTP Host | Your SMTP server hostname | `smtp.gmail.com` |
-| SMTP Port | Server port number | `587` (TLS) or `465` (SSL) |
-| Encryption | SSL, TLS, or None | `TLS` |
-| Authentication | Enable username/password | Checked |
-| Username | SMTP username (usually email) | `user@gmail.com` |
-| Password | SMTP password or app password | `your-password` |
-
-3. Configure the From Address (optional):
-
-| Field | Description | Example |
-|-------|-------------|---------|
-| From Email | Sender email address | `wordpress@example.com` |
-| From Name | Sender display name | `My Website` |
-| Return Path | Set return-path header | Checked |
-
-4. Click **Save Settings**
-
-### Common SMTP Settings
-
-**Gmail/Google Workspace:**
-- Host: `smtp.gmail.com`
-- Port: `587`
-- Encryption: TLS
-- Username: Your full email address
-- Password: App-specific password (enable 2FA first)
-
-**Microsoft Outlook/365:**
-- Host: `smtp.office365.com`
-- Port: `587`
-- Encryption: TLS
-- Username: Your full email address
-- Password: Your password or app password
-
-**SendGrid:**
-- Host: `smtp.sendgrid.net`
-- Port: `587`
-- Encryption: TLS
-- Username: `apikey`
-- Password: Your SendGrid API key
-
-**Mailgun:**
-- Host: `smtp.mailgun.org`
-- Port: `587`
-- Encryption: TLS
-- Username: Your Mailgun email
-- Password: Your Mailgun password
-
-## Testing
-
-1. Go to **Settings → KISSMTP**
-2. Scroll to the **Test Email** section
-3. Enter a recipient email address
-4. Click **Send Test Email**
-5. Check the recipient inbox and any error messages
-
-## Debugging
-
-Enable WordPress debug logging to see SMTP debug output:
+The plugin loads no mail configuration until `plugins_loaded`; it is safe to activate on a site without OpenSSL. An administrator can instead define the password outside the database:
 
 ```php
-// wp-config.php
-define('WP_DEBUG', true);
-define('WP_DEBUG_LOG', true);
+define( 'KISSMTP_PASSWORD', 'your-smtp-password' );
 ```
 
-SMTP debug logs are written to `/wp-content/debug.log` with the prefix `[KISSMTP SMTP]`.
+Add the constant to `wp-config.php`, before WordPress is loaded. A defined constant always takes precedence over a stored password.
 
-## Uninstalling
+Optionally, define `KISSMTP_ENCRYPTION_KEY` to provide the database-encryption key from deployment configuration. Otherwise the plugin derives its runtime key from the WordPress authentication salt. Changing authentication salts means database-stored passwords must be entered again.
 
-The plugin cleanly removes all data when deleted:
+## Usage
 
-1. Go to **Plugins**
-2. Click **Deactivate** on KISSMTP
-3. Click **Delete**
+1. Activate the plugin.
+2. Open **Settings > KISSMTP**.
+3. Enter the SMTP host, port, encryption mode, authentication settings, and optional sender details.
+4. Save the settings, then enable SMTP.
+5. Use the test-email panel to submit a message. A successful result confirms WordPress handed the message to its configured mail transport, not that the recipient accepted or delivered it.
 
-All SMTP settings and transients are automatically removed.
+No mail behavior changes until **Enable SMTP** is selected and the configuration is complete. Disabling SMTP leaves WordPress and other mail plugins' sender settings untouched.
 
-## License
+## Security
 
-MIT License - see [LICENSE](LICENSE) file for details.
+- Stored passwords use AES-256-GCM authenticated encryption and are never rendered or logged.
+- SMTP protocol debug logging is always disabled to prevent credential leakage.
+- Test email requests require `manage_options`, a nonce, and are limited to one request per administrator every 30 seconds.
+- TLS certificate verification is left enabled. The plugin intentionally has no "allow self-signed certificates" setting.
+- A WordPress database cannot securely protect a secret from an attacker who also controls the WordPress application. Prefer `KISSMTP_PASSWORD` supplied through deployment secrets for production sites.
 
-## Contributing
+## Upgrade from 1.x
 
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
+Version 2 migrates only non-secret legacy connection settings. It disables SMTP and discards the old password value, because the previous CBC storage format was unauthenticated and cannot be safely trusted. Re-enter the password and explicitly enable SMTP after upgrading.
+
+## Multisite
+
+Configuration is per site. Network-wide settings and network activation are not supported.
+
+## Development checks
+
+Run PHP syntax checks against the plugin files and run the WordPress coding standards/static-analysis tooling supplied by your project before release. Test against the oldest supported PHP/WordPress pair and current WordPress/PHP, using a local SMTP test server for TLS, implicit TLS, authenticated, and unauthenticated flows.
