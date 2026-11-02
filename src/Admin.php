@@ -5,10 +5,12 @@ namespace KissMtp;
 final class Admin {
     private $repository;
     private $credentials;
+    private $mailer;
 
-    public function __construct( SettingsRepository $repository, CredentialStore $credentials ) {
+    public function __construct( SettingsRepository $repository, CredentialStore $credentials, MailerConfigurator $mailer ) {
         $this->repository  = $repository;
         $this->credentials = $credentials;
+        $this->mailer      = $mailer;
     }
 
     public function register() {
@@ -91,15 +93,36 @@ final class Admin {
         }
 
         set_transient( $rate_key, 1, 30 );
-        $sent = wp_mail(
-            $recipient,
-            __( 'KISSMTP Test Email', 'kissmtp' ),
-            __( 'This message was accepted for delivery by WordPress using the configured SMTP transport.', 'kissmtp' ),
-            array( 'Content-Type: text/plain; charset=UTF-8' )
-        );
+        $used_transport = false;
+        $subject = __( 'KISSMTP Test Email', 'kissmtp' );
+        $observe = function ( $data ) use ( &$used_transport, $recipient, $subject ) {
+            // Ignore unrelated messages sent recursively by mail/logging plugins.
+            if ( $subject !== $data['subject'] || array( $recipient ) !== (array) $data['to'] ) {
+                return;
+            }
+            global $phpmailer;
+            $used_transport = $this->mailer->is_configured( $phpmailer );
+        };
+        // Inspect the effective transport before the configurator restores shared state.
+        add_action( 'wp_mail_succeeded', $observe, 0 );
+        try {
+            $sent = wp_mail(
+                $recipient,
+                $subject,
+                __( 'This message was accepted for delivery by WordPress using the configured SMTP transport.', 'kissmtp' ),
+                array( 'Content-Type: text/plain; charset=UTF-8' )
+            );
+        } finally {
+            remove_action( 'wp_mail_succeeded', $observe, 0 );
+            $this->mailer->restore();
+        }
 
         if ( ! $sent ) {
             wp_send_json_error( array( 'message' => __( 'WordPress could not submit the test email. Check the SMTP settings and your mail server logs.', 'kissmtp' ) ), 500 );
+        }
+
+        if ( ! $used_transport ) {
+            wp_send_json_error( array( 'message' => __( 'Another mail handler intercepted the test or changed the transport. WordPress reported success, but the KISSMTP configuration was not verified.', 'kissmtp' ) ), 409 );
         }
 
         wp_send_json_success( array( 'message' => __( 'WordPress submitted the test email to the configured transport. Check the recipient inbox to confirm delivery.', 'kissmtp' ) ) );

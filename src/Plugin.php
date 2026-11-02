@@ -29,7 +29,7 @@ final class Plugin {
         $mailer->register();
 
         if ( is_admin() ) {
-            $admin = new Admin( $this->repository, $this->credentials );
+            $admin = new Admin( $this->repository, $this->credentials, $mailer );
             $admin->register();
         }
     }

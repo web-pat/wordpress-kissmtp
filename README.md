@@ -26,7 +26,11 @@ Optionally, define `KISSMTP_ENCRYPTION_KEY` to provide the database-encryption k
 4. Save the settings, then enable SMTP.
 5. Use the test-email panel to submit a message. A successful result confirms WordPress handed the message to its configured mail transport, not that the recipient accepted or delivered it.
 
-No mail behavior changes until **Enable SMTP** is selected and the configuration is complete. Disabling SMTP leaves WordPress and other mail plugins' sender settings untouched.
+No mail behavior changes until **Enable SMTP** is selected. Disabling SMTP leaves WordPress and other mail plugins' sender settings untouched.
+
+An enabled but incomplete or undecryptable configuration fails mail submission through `wp_mail_failed` rather than silently falling back to PHP mail. Re-enter the password after changing WordPress salts. KISSMTP closes existing SMTP sessions before configuring each message and restores its changes after delivery, including its envelope-sender override, so shared PHPMailer state does not leak between sites or messages.
+
+Use only one mail transport plugin at a time. Other plugins may intercept `wp_mail()` or override SMTP settings; the test panel reports an unverified result when WordPress reports success without using KISSMTP's configured transport.
 
 ## Security
 
@@ -47,3 +51,11 @@ Configuration is per site. Network-wide settings and network activation are not 
 ## Development checks
 
 Run PHP syntax checks against the plugin files and run the WordPress coding standards/static-analysis tooling supplied by your project before release. Test against the oldest supported PHP/WordPress pair and current WordPress/PHP, using a local SMTP test server for TLS, implicit TLS, authenticated, and unauthenticated flows.
+
+Run the interoperability regression checks against an unpacked WordPress source distribution (no installation or database required):
+
+```sh
+KISSMTP_WP_ROOT=/path/to/wordpress php tests/interoperability.php
+```
+
+These checks use WordPress's real hooks and `wp_mail()` with a network-free PHPMailer test double. They cover failure handling, transport identity and cleanup across site configurations, and test-email interception; they do not replace live SMTP/TLS delivery tests.
